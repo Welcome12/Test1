@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<ConnectConfig xmlns="http://www.example.org/ConnectConfig2">
+
+	<!-- This sample provides examples and description of configuration values for StarTeam and Subversion Connectors
+	     For more information on the supported Borland Connect options, please see the Connect.xml definition in the User Guide. -->
+	
+	<!-- ValidateOnly: during configuration, set this to true to insure that no data in any DataSource is alterated.
+		One synchronization cycle will be performed.  The logs will be written as if changes had been made in order
+		to verify intended operation. Optional, default is false -->
+    <ValidateOnly>false</ValidateOnly>
+	
+	<!-- Repeat: time in seconds between synchronizations.  Optional - defaults to 5 seconds -->
+    <Repeat>20</Repeat>
+	
+	<!-- MaxThreads: If multiple DataSources or projects are specified, synchronization is spread out over this many threads.
+    	Each thread has it's own StarTeam Server connection. Optional, defaults to 1.  Max is 10 -->
+    <MaxThreads>1</MaxThreads>
+	
+	<!-- DataSource: defines parameters to connect to a repository and the types of data to be synchronized -->
+    <DataSource>
+		
+		<!-- Name: referenced in Synchronization block, must be unique -->
+        <name>HubDefault</name>
+		
+		<!-- Product: used for repository type.  Predefined products: StarTeam, Subversion -->
+        <product>StarTeam</product>
+		
+		<!-- connector: defines parameters necessary to create a connection to a repository -->
+        <connector>
+			<!-- connectorClass: DataPool implementation for this repository -->
+            <connectorClass>com.borland.connect.STDataPool</connectorClass>
+			<!-- userName and password for the Admin user to log in with.  If editing by hand use the encrypt.bat to encrypt the password -->
+            <userName>Administrator</userName>
+            <password>Administrator</password>
+			
+			<!-- Custom parameters referenced by the specific DataPool implementation.
+				Custom parameters for a DataPool or Type should always contain a unique name within a DataSource-->
+            <CustomProperty>
+				<!-- URL: custom StarTeam property for identifying the location of the StarTeam Server.  Required for StarTeam DataSource -->
+                <name>URL</name>
+                <value>starteam://localhost:49201</value>
+            </CustomProperty>
+        </connector>
+		
+		<!-- Type: defines a type of item in the repository for synchronization. -->
+        <Type>
+		
+			<!-- name: the name of the item type.  For StarTeam, name matches the name of the component, e.g ChangeRequest, Task, Topic, Requirement, Story, Sprint, ChangePackage
+			    or the name of a custom component.  If this type is for a 3rd party SCM Connector, then the name should be 'ChangeSet'-->
+            <name>ChangeSet</name>
+			
+			<!-- readOnly: Setting a type as readonly will only allow one-way synchronization regardless of the
+				mapping ownership.  Unlike ValidateOnly, synchronization will continue until Borland Connect is stopped.  Optional, default is false. -->
+            <readOnly>false</readOnly>
+			
+			<!-- createNewItems: restricts synchronization from creating new items of this type.  Optional, default is false -->
+            <createNewItems>true</createNewItems>
+			
+			<!-- idproperty: defines the property used to hold a unique key for item of the this type.  Required. For StarTeam, this value is
+			ViewMemberID -->
+            <idProperty>ViewMemberID</idProperty>
+			
+			<!-- modifiedByProperty and modifiedTypeProperty: Properties indicating who and when for changed items.  Required.  For StarTeam, this value
+			is ModifiedUserID and ModifiedTime -->
+            <modifiedByProperty>ModifiedUserID</modifiedByProperty>
+            <modifiedTimeProperty>ModifiedTime</modifiedTimeProperty>
+			<!-- optional connectorClass can override the connectorClass specified on the DataSource.  If this Type is a ChangeSet, then the specified class
+				must implement SCMDataPool -->
+            <connectorClass>com.borland.connect.STSCMDataPool</connectorClass>
+        </Type>
+    </DataSource>
+	
+    <DataSource>
+        <name>OT</name>
+        <product>Subversion</product>
+        <connector>
+            <connectorClass>com.svn.connect.SVNDataPool</connectorClass>
+            <userName>admin</userName>
+            <password>admin</password>
+            <timeOffSet>0</timeOffSet>
+            <CustomProperty>
+                <name>URL</name>
+                <value>http://127.0.0.1:8080/svn</value>
+            </CustomProperty>
+        </connector>
+        <Type>
+            <name>ChangeSet</name>
+            <readOnly>false</readOnly>
+            <createNewItems>true</createNewItems>
+            <idProperty>ID</idProperty>
+            <modifiedByProperty>ModifiedBy</modifiedByProperty>
+            <modifiedTimeProperty>ModifiedTime</modifiedTimeProperty>
+			
+			<!-- optional processItemProperty which specifies a property where a StarTeam Item URL may be specified that associates a StarTeam process item to the 3rd party ChangeSet -->
+            <processItemProperty>Comment</processItemProperty>
+
+        </Type>
+    </DataSource>
+	
+	<!-- Synchronization: defines a mapping between types in 2 data sources.  Source/target is not an indication of direction of data flow -->
+    <Synchronization>
+	
+		<name>SVNConnection</name>
+		<!-- source and target: name of a defined DataSource -->
+        <source>HubDefault</source>
+        <target>OT</target>
+		<!-- direction: defines the flow of data.  When specified at the Synchronization, is used as default for all PropertyMaps.
+		    Possible values are "fromSource", "fromTarget" or "both".  Optoinal, default is "both" -->
+		<direction>fromTarget</direction>
+		
+		<!-- TypeMap: defines the source and target item types to synchronize and the properties to be synchronized. -->
+        <TypeMap>
+		
+			<!-- source and target: name of the defined Types from the DataSources. -->
+            <source>ChangeSet</source>
+            <target>ChangeSet</target>
+			
+			<!-- linkMap: the idProperty of the OTHER type will be stored in this property.  Synchronization deletion of items of a given type
+				requires a linkMap be defined in the OTHER type.  The specified property should not be edited on items by users.
+				Both sourceProperty and targetProperty can be specified and at least one if required. -->
+            <linkMap>
+                <sourceProperty>Name</sourceProperty>
+                <targetProperty>Comment</targetProperty>
+            </linkMap>
+			
+        </TypeMap>
+		
+		<!-- Project map (source or target) for starteam holds the name of the StarTeam project and an optional URL (sourceRootFolder or
+			 targetRootFolder ) to the folder in any view of that project to be used to synchronize.
+			 For SVN, the (target or source) is the name of the SVN repository hosted on the URL from the DataPool.
+			 The optional rootFolder, is a folder path beginning with / and not ending with a slash. -->
+
+		<!--
+		<ProjectMap>
+            <source></source>
+			<sourceRootPath></sourceRootPath>
+			<target></target>
+			<targetRootPath></targetRootPath>
+        </ProjectMap>
+		-->
+		
+    </Synchronization>
+</ConnectConfig>
